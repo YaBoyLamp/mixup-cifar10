@@ -141,26 +141,30 @@ def mixup_criterion(criterion, pred, y_a, y_b, lam):
 
 def fgsm(model, criterion, x, y, epsilon=0.1):
     if use_cuda:
-        x = Variable(x.cuda(), requires_grad=True)
-        y = Variable(y).cuda()
+        x_var = Variable(x.cuda(), requires_grad=True)
+        y_var = Variable(y).cuda()
     else:
-        x = Variable(x, requires_grad=True)
-        y = Variable(y)
+        x_var = Variable(x, requires_grad=True)
+        y_var = Variable(y)
     
-    output = model.forward(x)
+    output = model.forward(x_var)
     
-    loss = criterion(output, y)
+    loss = criterion(output, y_var)
     loss.backward()
     
-    grad = x.grad.data.cpu().sign()
+    grad = x_var.grad.data.cpu().sign()
     x += epsilon * grad
     x = np.clip(x.numpy(), 0, 1)
     x = torch.FloatTensor(x)
-    return x
+    return x, y
 
 def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=True):
 
-    x_start = x_start.cpu()
+    if use_cuda:
+        x_start = x_start.cpu()
+        y_var = Variable(y.cuda())
+    else:
+        y_var = Variable(y)
 
     if random_start:
         noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x_start.shape))
@@ -172,10 +176,8 @@ def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=Tr
     for _ in range(k):
         if use_cuda:
             x_var = Variable(x.cuda(), requires_grad=True)
-            y_var = Variable(y).cuda()
         else:
             x_var = Variable(x, requires_grad=True)
-            y_var = Variable(y)
             
         output = model.forward(x_var)
     
@@ -194,7 +196,7 @@ def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=Tr
     return x, y
 
 def adversarial_data(model, criterion, x, y):
-    return pgd(model, criterion, x, y)
+    return fgsm(model, criterion, x, y)
 
 def train(epoch):
     print('\nEpoch: %d' % epoch)

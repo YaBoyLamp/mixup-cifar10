@@ -158,34 +158,35 @@ def fgsm(model, criterion, x, y, epsilon=0.1):
     x = torch.FloatTensor(x)
     return x
 
-def pgd(model, criterion, x, y, epsilon=0.1, k=10, a=0.02, random_start=True):
+def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=True):
     if random_start:
-        noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x.shape))
+        noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x_start.shape))
         if use_cuda:
             noise = noise.cuda()
-        start = x + noise.float()
+        x = x_start + noise.float()
     else:
-        start = x
-    
-    for i in range(k):
+        x = x_start
+
+    for _ in range(k):
         if use_cuda:
-            x = Variable(start.cuda(), requires_grad=True)
-            y = Variable(y).cuda()
+            x_var = Variable(x.cuda(), requires_grad=True)
+            y_var = Variable(y).cuda()
         else:
-            x = Variable(start, requires_grad=True)
-            y = Variable(y)
+            x_var = Variable(x, requires_grad=True)
+            y_var = Variable(y)
             
-        output = model.forward(x)
+        output = model.forward(x_var)
     
-        loss = criterion(output, y)
+        loss = criterion(output, y_var)
         loss.backward()
     
-        grad = x.grad.data.cpu().sign()
-        start += a * grad
-        start = np.clip(start.numpy(), x.numpy() - epsilon, x.numpy() + epsilon)
-        start = np.clip(start, 0, 1)
-        start = torch.FloatTensor(start)
-    return start
+        grad = x_var.grad.data.cpu().numpy()
+        
+        x = x.numpy() + a * np.sign(grad)
+        x = np.clip(x, x_start.numpy() - epsilon, x_start.numpy() + epsilon)
+        x = np.clip(x, 0, 1)
+        x = torch.FloatTensor(x)
+    return x, y
 
 def adversarial_data(model, criterion, x, y):
     return pgd(model, criterion, x, y)

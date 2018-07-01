@@ -38,7 +38,7 @@ parser.add_argument('--no-augment', dest='augment', action='store_false',
 parser.add_argument('--decay', default=1e-4, type=float, help='weight decay')
 parser.add_argument('--alpha', default=1., type=float,
                     help='mixup interpolation coefficient (default: 1)')
-parser.add_argument('--mixup', '-m', action='store_true'
+parser.add_argument('--mixup', '-m', action='store_true',
                     help='to perform mixup')
 parser.add_argument('--adversarial', '-a', action='store_true',
                     help='to perform adversarial')

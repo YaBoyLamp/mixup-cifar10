@@ -182,6 +182,8 @@ def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=Tr
     
         grad = x_var.grad.data.cpu().numpy()
 
+        if use_cuda:
+            x = x.cpu()
         x = x.numpy() + a * np.sign(grad)
         x = np.clip(x, x_start.numpy() - epsilon, x_start.numpy() + epsilon)
         x = np.clip(x, 0, 1)

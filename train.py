@@ -153,9 +153,14 @@ def fgsm(model, criterion, x, y, epsilon=0.1):
     loss.backward()
     
     grad = x_var.grad.data.cpu().sign()
+
+    x = x.cpu()
     x += epsilon * grad
     x = np.clip(x.numpy(), 0, 1)
     x = torch.FloatTensor(x)
+
+    if use_cuda:
+        return x.cuda(), y
     return x, y
 
 def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=True):

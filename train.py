@@ -38,6 +38,10 @@ parser.add_argument('--no-augment', dest='augment', action='store_false',
 parser.add_argument('--decay', default=1e-4, type=float, help='weight decay')
 parser.add_argument('--alpha', default=1., type=float,
                     help='mixup interpolation coefficient (default: 1)')
+parser.add_argument('--mixup', default=False, type=bool,
+                    help='to perform mixup')
+parser.add_argument('--adversarial', default=False, type=bool,
+                    help='to perform adversarial')
 args = parser.parse_args()
 
 use_cuda = torch.cuda.is_available()
@@ -88,8 +92,7 @@ if args.resume:
     # Load checkpoint.
     print('==> Resuming from checkpoint..')
     assert os.path.isdir('checkpoint'), 'Error: no checkpoint directory found!'
-    checkpoint = torch.load('./checkpoint/ckpt.t7' + args.name + '_'
-                            + str(args.seed))
+    checkpoint = torch.load(get_checpoint_name())
     net = checkpoint['net']
     best_acc = checkpoint['acc']
     start_epoch = checkpoint['epoch'] + 1
@@ -133,10 +136,57 @@ def mixup_data(x, y, alpha=1.0, use_cuda=True):
     y_a, y_b = y, y[index]
     return mixed_x, y_a, y_b, lam
 
-
 def mixup_criterion(criterion, pred, y_a, y_b, lam):
     return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
+def fgsm(model, criterion, x, y, epsilon=0.1):
+    if torch.cuda.is_available():
+        x = Variable(x.cuda(), requires_grad=True)
+        y = Variable(y).cuda()
+    else:
+        x = Variable(x, requires_grad=True)
+        y = Variable(y)
+    
+    output = model.forward(x)
+    
+    loss = criterion(output, y)
+    loss.backward()
+    
+    grad = x.grad.data.cpu().sign()
+    x += epsilon * grad
+    x = np.clip(x.numpy(), 0, 1)
+    x = torch.FloatTensor(x)
+    return x
+
+def pgd(model, criterion, x, y, epsilon=0.1, k=10, a=0.02, random_start=True):
+    if random_start:
+        noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x.shape))
+        start = x + noise.float()
+    else:
+        start = x
+    
+    for i in range(k):
+        if torch.cuda.is_available():
+            x = Variable(start.cuda(), requires_grad=True)
+            y = Variable(y).cuda()
+        else:
+            x = Variable(start, requires_grad=True)
+            y = Variable(y)
+            
+        output = model.forward(x)
+    
+        loss = criterion(output, y)
+        loss.backward()
+    
+        grad = x.grad.data.cpu().sign()
+        start += a * grad
+        start = np.clip(start.numpy(), x.numpy() - epsilon, x.numpy() + epsilon)
+        start = np.clip(start, 0, 1)
+        start = torch.FloatTensor(start)
+    return start
+
+def adversarial_data(model, criterion, x, y):
+    return pgd(model, criterion, x, y)
 
 def train(epoch):
     print('\nEpoch: %d' % epoch)
@@ -149,8 +199,17 @@ def train(epoch):
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
 
-        inputs, targets_a, targets_b, lam = mixup_data(inputs, targets,
+        if args.adversarial:
+            inputs, targets = adversarial_data(net, criterion, inputs, targets)
+
+        if args.mixup:
+            inputs, targets_a, targets_b, lam = mixup_data(inputs, targets,
                                                        args.alpha, use_cuda)
+        else:
+            targets_a = targets
+            targets_b = targets
+            lam = 0
+
         inputs, targets_a, targets_b = map(Variable, (inputs,
                                                       targets_a, targets_b))
         outputs = net(inputs)
@@ -213,9 +272,15 @@ def checkpoint(acc, epoch):
     }
     if not os.path.isdir('checkpoint'):
         os.mkdir('checkpoint')
-    torch.save(state, './checkpoint/ckpt.t7' + args.name + '_'
-               + str(args.seed))
+    torch.save(state, get_checpoint_name())
 
+def get_checpoint_name():
+    checkpoint = './checkpoint/ckpt'
+    if args.adversarial:
+        checkpoint += '-adv'
+    if args.mixup:
+        checkpoint += '-mix'
+    checkpoint += '.t7' + args.name + '_' + str(args.seed)
 
 def adjust_learning_rate(optimizer, epoch):
     """decrease the learning rate at 100 and 150 epoch"""

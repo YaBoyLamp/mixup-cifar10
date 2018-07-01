@@ -140,9 +140,11 @@ def mixup_criterion(criterion, pred, y_a, y_b, lam):
     return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
 def fgsm(model, criterion, x, y, epsilon=0.1):
+    x = x.cpu()
+    
     if use_cuda:
         x_var = Variable(x.cuda(), requires_grad=True)
-        y_var = Variable(y).cuda()
+        y_var = Variable(y.cuda())
     else:
         x_var = Variable(x, requires_grad=True)
         y_var = Variable(y)

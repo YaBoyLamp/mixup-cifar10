@@ -140,7 +140,7 @@ def mixup_criterion(criterion, pred, y_a, y_b, lam):
     return lam * criterion(pred, y_a) + (1 - lam) * criterion(pred, y_b)
 
 def fgsm(model, criterion, x, y, epsilon=0.1):
-    if torch.cuda.is_available():
+    if use_cuda:
         x = Variable(x.cuda(), requires_grad=True)
         y = Variable(y).cuda()
     else:
@@ -161,12 +161,14 @@ def fgsm(model, criterion, x, y, epsilon=0.1):
 def pgd(model, criterion, x, y, epsilon=0.1, k=10, a=0.02, random_start=True):
     if random_start:
         noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x.shape))
+        if use_cuda:
+            noise = noise.cuda()
         start = x + noise.float()
     else:
         start = x
     
     for i in range(k):
-        if torch.cuda.is_available():
+        if use_cuda:
             x = Variable(start.cuda(), requires_grad=True)
             y = Variable(y).cuda()
         else:

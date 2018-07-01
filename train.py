@@ -285,10 +285,11 @@ def checkpoint(acc, epoch):
 def get_checpoint_name():
     checkpoint = './checkpoint/ckpt'
     if args.adversarial:
-        checkpoint += '-adv'
+        checkpoint += '_adv'
     if args.mixup:
-        checkpoint += '-mix'
+        checkpoint += '_mix'
     checkpoint += '.t7' + args.name + '_' + str(args.seed)
+    return checkpoint
 
 def adjust_learning_rate(optimizer, epoch):
     """decrease the learning rate at 100 and 150 epoch"""

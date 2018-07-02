@@ -287,9 +287,9 @@ def checkpoint(acc, epoch):
     }
     if not os.path.isdir('checkpoint'):
         os.mkdir('checkpoint')
-    torch.save(state, get_checpoint_name())
+    torch.save(state, get_checkpoint_name())
 
-def get_checpoint_name():
+def get_checkpoint_name():
     checkpoint = './checkpoint/ckpt'
     if args.adversarial:
         checkpoint += '_adv'

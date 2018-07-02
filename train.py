@@ -86,6 +86,14 @@ testset = datasets.CIFAR10(root='~/data', train=False, download=True,
 testloader = torch.utils.data.DataLoader(testset, batch_size=100,
                                          shuffle=False, num_workers=8)
 
+def get_checkpoint_name():
+    checkpoint = './checkpoint/ckpt'
+    if args.adversarial:
+        checkpoint += '_adv'
+    if args.mixup:
+        checkpoint += '_mix'
+    checkpoint += '.t7' + args.name + '_' + str(args.seed)
+    return checkpoint
 
 # Model
 if args.resume:
@@ -288,15 +296,6 @@ def checkpoint(acc, epoch):
     if not os.path.isdir('checkpoint'):
         os.mkdir('checkpoint')
     torch.save(state, get_checkpoint_name())
-
-def get_checkpoint_name():
-    checkpoint = './checkpoint/ckpt'
-    if args.adversarial:
-        checkpoint += '_adv'
-    if args.mixup:
-        checkpoint += '_mix'
-    checkpoint += '.t7' + args.name + '_' + str(args.seed)
-    return checkpoint
 
 def adjust_learning_rate(optimizer, epoch):
     """decrease the learning rate at 100 and 150 epoch"""

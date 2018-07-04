@@ -209,7 +209,7 @@ def pgd(model, criterion, x_start, y, epsilon=0.1, k=4, a=0.025, random_start=Tr
     return x, y
 
 def adversarial_data(model, criterion, x, y):
-    split = len(x)/4
+    split = int(len(x)/4)
     x_adv, y_adv = pgd(model, criterion, x[:split], y[:split])
     x = torch.cat([x_adv, x[split:]])
     y = torch.cat([y_adv, y[split:]])

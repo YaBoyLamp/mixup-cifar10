@@ -171,7 +171,7 @@ def fgsm(model, criterion, x, y, epsilon=0.1):
         return x.cuda(), y
     return x, y
 
-def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=True):
+def pgd(model, criterion, x_start, y, epsilon=0.1, k=4, a=0.025, random_start=True):
 
     if use_cuda:
         x_start = x_start.cpu()
@@ -209,7 +209,12 @@ def pgd(model, criterion, x_start, y, epsilon=0.1, k=10, a=0.02, random_start=Tr
     return x, y
 
 def adversarial_data(model, criterion, x, y):
-    return fgsm(model, criterion, x, y)
+    split = len(x)/4
+    x_adv, y_adv = pgd(model, criterion, x[:split], y[:split])
+    x = torch.cat([x_adv, x[split:]])
+    y = torch.cat([y_adv, y[split:]])
+    return x, y
+
 
 def train(epoch):
     print('\nEpoch: %d' % epoch)

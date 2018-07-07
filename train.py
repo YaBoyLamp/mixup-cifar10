@@ -175,31 +175,25 @@ def pgd(model, criterion, x_start, y, epsilon=0.1, k=4, a=0.025, random_start=Tr
     if random_start:
         noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x_start.shape))
         if use_cuda:
-            x_start = x_start.cpu()
+            noise = noise.cuda()
         x = x_start + noise.float()
     else:
         x = x_start
 
     for _ in range(k):
-        if use_cuda:
-            x_var = Variable(x.cuda(), requires_grad=True)
-        else:
-            x_var = Variable(x, requires_grad=True)
-            
+        x_var = Variable(x, requires_grad=True)
+
         output = model.forward(x_var)
     
         loss = criterion(output, y)
         loss.backward()
     
-        grad = x_var.grad.data.cpu().numpy()
+        grad = x_var.grad.data
+        x = x +  a * torch.sign(grad)
+        x = torch.max(x, x_start - epsilon)
+        x = torch.min(x, x_start + epsilon)
+        x = torch.clamp(x, 0, 1)
 
-        x = x.numpy() + a * np.sign(grad)
-        x = np.clip(x, x_start.numpy() - epsilon, x_start.numpy() + epsilon)
-        x = np.clip(x, 0, 1)
-        x = torch.FloatTensor(x)
-
-    if use_cuda:
-        return x.cuda(), y
     return x, y
 
 def adversarial_data(model, criterion, x, y):

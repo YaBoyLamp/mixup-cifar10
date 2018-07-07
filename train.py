@@ -175,13 +175,16 @@ def pgd(model, criterion, x_start, y, epsilon=0.1, k=4, a=0.025, random_start=Tr
     if random_start:
         noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x_start.shape))
         if use_cuda:
-            noise = noise.cuda()
+            x_start = x_start.cpu()
         x = x_start + noise.float()
     else:
         x = x_start
 
     for _ in range(k):
-        x_var = Variable(x, requires_grad=True)
+        if use_cuda:
+            x_var = Variable(x.cuda(), requires_grad=True)
+        else:
+            x_var = Variable(x, requires_grad=True)
             
         output = model.forward(x_var)
     

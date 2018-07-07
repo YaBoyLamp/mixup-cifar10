@@ -172,41 +172,29 @@ def fgsm(model, criterion, x, y, epsilon=0.1):
     return x, y
 
 def pgd(model, criterion, x_start, y, epsilon=0.1, k=4, a=0.025, random_start=True):
-
-    if use_cuda:
-        x_start = x_start.cpu()
-        y_var = Variable(y.cuda())
-    else:
-        y_var = Variable(y)
-
     if random_start:
         noise = torch.from_numpy(np.random.uniform(-epsilon, epsilon, x_start.shape))
+        if use_cuda:
+            noise = noise.cuda()
         x = x_start + noise.float()
     else:
         x = x_start
 
+    x_var = Variable(x, requires_grad=True)
 
-    for _ in range(k):
-        if use_cuda:
-            x_var = Variable(x.cuda(), requires_grad=True)
-        else:
-            x_var = Variable(x, requires_grad=True)
-            
+    for _ in range(k):    
         output = model.forward(x_var)
     
         loss = criterion(output, y_var)
         loss.backward()
-    
-        grad = x_var.grad.data.cpu().numpy()
 
-        x = x.numpy() + a * np.sign(grad)
-        x = np.clip(x, x_start.numpy() - epsilon, x_start.numpy() + epsilon)
-        x = np.clip(x, 0, 1)
-        x = torch.FloatTensor(x)
+        grad = x_var.grad.data
 
-    if use_cuda:
-        return x.cuda(), y
-    return x, y
+        x_var = x_var + a * torch.sign(grad)
+        x_var = torch.clamp(x_var, x_start.numpy() - epsilon, x_start.numpy() + epsilon)
+        x_var = torch.clamp(x_var, 0, 1)
+
+    return x_var.data, y
 
 def adversarial_data(model, criterion, x, y):
     split = int(len(x)/4)

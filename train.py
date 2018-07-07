@@ -30,7 +30,7 @@ parser.add_argument('--model', default="ResNet18", type=str,
                     help='model type (default: ResNet18)')
 parser.add_argument('--name', default='0', type=str, help='name of run')
 parser.add_argument('--seed', default=0, type=int, help='random seed')
-parser.add_argument('--batch-size', default=128, type=int, help='batch size')
+parser.add_argument('--batch-size', default=512, type=int, help='batch size')
 parser.add_argument('--epoch', default=200, type=int,
                     help='total epochs to run')
 parser.add_argument('--no-augment', dest='augment', action='store_false',

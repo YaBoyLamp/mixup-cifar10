@@ -30,7 +30,7 @@ parser.add_argument('--model', default="ResNet18", type=str,
                     help='model type (default: ResNet18)')
 parser.add_argument('--name', default='0', type=str, help='name of run')
 parser.add_argument('--seed', default=0, type=int, help='random seed')
-parser.add_argument('--batch-size', default=512, type=int, help='batch size')
+parser.add_argument('--batch-size', default=256, type=int, help='batch size')
 parser.add_argument('--epoch', default=200, type=int,
                     help='total epochs to run')
 parser.add_argument('--no-augment', dest='augment', action='store_false',
@@ -207,10 +207,10 @@ def adversarial_data(model, criterion, x, y):
 def train(epoch):
     print('\nEpoch: %d' % epoch)
     net.train()
-    train_loss = 0
-    reg_loss = 0
-    correct = 0
-    total = 0
+    train_loss = 0.
+    reg_loss = 0.
+    correct = 0.
+    total = 0.
     for batch_idx, (inputs, targets) in enumerate(trainloader):
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
@@ -244,15 +244,15 @@ def train(epoch):
                      'Loss: %.3f | Reg: %.5f | Acc: %.3f%% (%d/%d)'
                      % (train_loss/(batch_idx+1), reg_loss/(batch_idx+1),
                         100.*correct/total, correct, total))
-    return (train_loss/batch_idx, reg_loss/batch_idx, 100.*correct/total)
+    return (train_loss/batch_idx, reg_loss/batch_idx, (100.*correct/total).item())
 
 
 def test(epoch):
     global best_acc
     net.eval()
-    test_loss = 0
-    correct = 0
-    total = 0
+    test_loss = 0.
+    correct = 0.
+    total = 0.
     for batch_idx, (inputs, targets) in enumerate(testloader):
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
@@ -274,7 +274,7 @@ def test(epoch):
         checkpoint(acc, epoch)
     if acc > best_acc:
         best_acc = acc
-    return (test_loss/batch_idx, 100.*correct/total)
+    return (test_loss/batch_idx, (100.*correct/total).item())
 
 
 def checkpoint(acc, epoch):

@@ -270,7 +270,7 @@ def test(epoch):
                      % (test_loss/(batch_idx+1), 100.*correct/total,
                         correct, total))
     acc = 100.*correct/total
-    if epoch == start_epoch + args.epoch - 1 or acc > best_acc:
+    if epoch == args.epoch - 1 or acc > best_acc:
         checkpoint(acc, epoch)
     if acc > best_acc:
         best_acc = acc

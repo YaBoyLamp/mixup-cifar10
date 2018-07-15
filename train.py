@@ -263,7 +263,7 @@ def test(epoch):
         test_loss += loss.data.item()
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
-        correct += predicted.eq(targets.data).cpu().sum()
+        correct += predicted.eq(targets.data).double().cpu().sum()
 
         progress_bar(batch_idx, len(testloader),
                      'Loss: %.3f | Acc: %.3f%% (%d/%d)'

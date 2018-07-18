@@ -212,6 +212,7 @@ def train(epoch):
     correct = 0.
     total = 0.
     for batch_idx, (inputs, targets) in enumerate(trainloader):
+        print("entering loop")
         if use_cuda:
             inputs, targets = inputs.cuda(), targets.cuda()
 
@@ -225,25 +226,28 @@ def train(epoch):
             targets_a = targets
             targets_b = targets
             lam = 0
-
+        print("input arrays")
         inputs, targets_a, targets_b = map(Variable, (inputs,
                                                       targets_a, targets_b))
         outputs = net(inputs)
+        print("outputs arrays")
         loss = mixup_criterion(criterion, outputs, targets_a, targets_b, lam)
         train_loss += loss.data.item()
         _, predicted = torch.max(outputs.data, 1)
         total += targets.size(0)
         correct += (lam * predicted.eq(targets_a.data).cpu().sum()
                     + (1 - lam) * predicted.eq(targets_b.data).cpu().sum())
-
+        print("step")
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
 
+        print("progress bar")
         progress_bar(batch_idx, len(trainloader),
                      'Loss: %.3f | Reg: %.5f | Acc: %.3f%% (%d/%d)'
                      % (train_loss/(batch_idx+1), reg_loss/(batch_idx+1),
                         100.*correct/total, correct, total))
+    print ("exit loop")
     return (train_loss/batch_idx, reg_loss/batch_idx, (100.*correct/total).item())
 
 
